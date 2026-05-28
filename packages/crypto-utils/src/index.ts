@@ -1,5 +1,11 @@
-import { createHash } from "node:crypto";
+export {
+  canonicalStringify,
+  type CanonicalJsonValue
+} from "./canonical-json";
 
-export function sha256(input: string): string {
-  return createHash("sha256").update(input).digest("hex");
-}
+export {
+  generateKeyPair,
+  signPayload,
+  verifyPayload,
+  type Ed25519KeyPair
+} from "./ed25519";
