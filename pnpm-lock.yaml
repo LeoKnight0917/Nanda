@@ -35,7 +35,11 @@ importers:
 
   packages/crypto-utils: {}
 
-  packages/shared-types: {}
+  packages/shared-types:
+    dependencies:
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
 
   services/finance-agent:
     dependencies:
