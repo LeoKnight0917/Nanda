@@ -90,6 +90,12 @@ pnpm resolve weather.agent
 pnpm resolve finance.agent
 ```
 
+Tampering demonstration (signature verification must fail):
+
+```bash
+pnpm resolve weather.agent --tamper
+```
+
 Docker CLI resolve example:
 
 ```bash

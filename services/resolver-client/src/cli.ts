@@ -12,11 +12,27 @@ interface ResolvedAgent {
   registeredAt: string;
 }
 
+interface CliOptions {
+  agentName: string;
+  tamper: boolean;
+}
+
 const indexServiceUrl = process.env.INDEX_SERVICE_URL ?? "http://localhost:3000";
 const useLocalHostRewrite = process.env.RESOLVER_USE_LOCALHOST !== "false";
 
+function parseCliOptions(argv: string[]): CliOptions {
+  const tamper = argv.includes("--tamper");
+  const agentName = argv.find((arg) => arg !== "--tamper");
+
+  if (!agentName) {
+    printUsageAndExit();
+  }
+
+  return { agentName, tamper };
+}
+
 function printUsageAndExit(): never {
-  console.error("Usage: pnpm resolve <agent-name>");
+  console.error("Usage: pnpm resolve <agent-name> [--tamper]");
   process.exit(1);
 }
 
@@ -43,6 +59,16 @@ function buildInvokePayload(facts: AgentFacts): Record<string, string> {
   }
 
   return { query: "health check" };
+}
+
+function tamperPayload(payload: AgentFacts): { tampered: AgentFacts; field: string; original: string; modified: string } {
+  const tampered: AgentFacts = { ...payload, capabilities: [...payload.capabilities] };
+  const field = "version";
+  const original = tampered.version;
+  const modified = `${original}-tampered`;
+  tampered.version = modified;
+
+  return { tampered, field, original, modified };
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -85,13 +111,14 @@ async function resolveAgent(agentName: string): Promise<ResolvedAgent> {
 }
 
 async function run(): Promise<void> {
-  const agentName = process.argv[2];
-  if (!agentName) {
-    printUsageAndExit();
-  }
+  const { agentName, tamper } = parseCliOptions(process.argv.slice(2));
 
   try {
     console.log(`Resolving agent: ${agentName}`);
+    if (tamper) {
+      console.log("Tamper mode: enabled (--tamper)");
+    }
+
     const resolved = await resolveAgent(agentName);
     const factsUrl = toLocalDevUrl(resolved.agentAddr);
 
@@ -108,13 +135,36 @@ async function run(): Promise<void> {
     console.log("\nFetched AgentFacts:");
     console.log(JSON.stringify(facts, null, 2));
 
+    const tamperInfo = tamper ? tamperPayload(signedFacts.payload) : null;
+    const payloadForVerification = tamperInfo ? tamperInfo.tampered : signedFacts.payload;
+
+    if (tamperInfo) {
+      console.log("\nPayload was modified (tamper demo):");
+      console.log(`- field: ${tamperInfo.field}`);
+      console.log(`- original: ${tamperInfo.original}`);
+      console.log(`- modified: ${tamperInfo.modified}`);
+    }
+
     const signatureValid = verifyPayload(
-      signedFacts.payload,
+      payloadForVerification,
       signedFacts.signature,
-      facts.publicKey
+      signedFacts.payload.publicKey
     );
+
     console.log(`\nSignature verification: ${signatureValid ? "SUCCESS" : "FAILED"}`);
+
+    if (tamper) {
+      if (!signatureValid) {
+        console.log("Tampering detected: signature does not match modified payload.");
+        process.exit(1);
+      }
+
+      console.error("Unexpected: tampered payload verified successfully.");
+      process.exit(1);
+    }
+
     if (!signatureValid) {
+      console.log("Signature verification failed.");
       process.exit(1);
     }
 
