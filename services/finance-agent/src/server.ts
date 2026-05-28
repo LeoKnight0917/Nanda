@@ -1,18 +1,14 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import type { HealthResponse } from "@nanda/shared-types";
+import { financeRoutes } from "./routes/finance.routes";
+import { healthRoutes } from "./routes/health.routes";
 
 const app = Fastify({ logger: true });
 const port = Number(process.env.PORT ?? 3003);
 const host = process.env.HOST ?? "0.0.0.0";
 
-app.get("/health", async (): Promise<HealthResponse> => {
-  return {
-    status: "ok",
-    service: "finance-agent",
-    timestamp: new Date().toISOString()
-  };
-});
+void app.register(healthRoutes);
+void app.register(financeRoutes);
 
 async function start(): Promise<void> {
   try {
