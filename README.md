@@ -33,7 +33,7 @@ project-nanda/
 
 ## Services
 
-Each service is an independent Fastify TypeScript app with:
+Each HTTP service is an independent Fastify TypeScript app with:
 
 - its own `package.json`
 - `dev`, `build`, and `start` scripts
@@ -41,18 +41,34 @@ Each service is an independent Fastify TypeScript app with:
 - Dockerfile
 - `.env.example`
 
+`resolver-client` is a CLI tool (not an HTTP server).
+
 Default ports:
 
 - `index-service`: `3000`
 - `weather-agent`: `3002`
 - `finance-agent`: `3003`
-- `resolver-client`: `3004`
 
 ## Quick Start
 
 ```bash
 pnpm install
 pnpm dev
+```
+
+`pnpm dev` starts index-service, weather-agent, and finance-agent. Agents auto-register with index-service on startup.
+
+If you see `EADDRINUSE` (port already in use), stop old dev processes and restart:
+
+```bash
+pnpm stop
+pnpm dev
+```
+
+Or in one command:
+
+```bash
+pnpm dev:clean
 ```
 
 Build all workspaces:
@@ -67,8 +83,20 @@ Run with Docker Compose:
 docker compose up --build
 ```
 
+Resolve and invoke an agent via CLI (with services running):
+
+```bash
+pnpm resolve weather.agent
+pnpm resolve finance.agent
+```
+
+Docker CLI resolve example:
+
+```bash
+docker compose --profile tools run --rm resolver-client weather.agent
+```
+
 ## Notes
 
-- No business logic is implemented yet.
-- `packages/shared-types` holds cross-service types.
-- `packages/crypto-utils` is reserved for shared crypto helpers.
+- `packages/shared-types` holds cross-service types and zod schemas.
+- `packages/crypto-utils` provides Ed25519 signing utilities.

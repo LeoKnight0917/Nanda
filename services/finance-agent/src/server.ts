@@ -7,11 +7,29 @@ import { registerWithIndexService } from "./services/index-registration.service"
 const app = Fastify({ logger: true });
 const port = Number(process.env.PORT ?? 3003);
 const host = process.env.HOST ?? "0.0.0.0";
-const registerUrl = process.env.INDEX_SERVICE_REGISTER_URL ?? "http://index-service:3000/register";
-const agentAddr = process.env.AGENT_PUBLIC_ADDR ?? `http://finance-agent:${port}/facts`;
+const registerUrl =
+  process.env.INDEX_SERVICE_REGISTER_URL ?? "http://localhost:3000/register";
+const agentAddr = process.env.AGENT_PUBLIC_ADDR ?? `http://localhost:${port}/facts`;
 
 void app.register(healthRoutes);
 void app.register(financeRoutes);
+
+function logListenError(error: unknown): void {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as NodeJS.ErrnoException).code === "EADDRINUSE"
+  ) {
+    app.log.error(
+      { port },
+      "Port already in use. Run \"pnpm stop\" from repo root, then \"pnpm dev\"."
+    );
+    return;
+  }
+
+  app.log.error(error);
+}
 
 async function start(): Promise<void> {
   try {
@@ -24,7 +42,7 @@ async function start(): Promise<void> {
       retryDelayMs: 2000
     });
   } catch (error) {
-    app.log.error(error);
+    logListenError(error);
     process.exit(1);
   }
 }

@@ -5,7 +5,7 @@ import { FinanceResponseService } from "../services/finance-response.service";
 
 const servicePort = process.env.PORT ?? "3003";
 const factsEndpoint =
-  process.env.AGENT_ENDPOINT ?? `http://finance-agent:${servicePort}/invoke`;
+  process.env.AGENT_ENDPOINT ?? `http://localhost:${servicePort}/invoke`;
 
 const agentFactsService = new AgentFactsService(factsEndpoint);
 const financeResponseService = new FinanceResponseService();

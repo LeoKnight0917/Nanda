@@ -30,7 +30,7 @@ test("signPayload and verifyPayload succeed for valid payload", () => {
     agentId: "weather.agent",
     version: "1.0.0",
     capabilities: ["weather.query", "weather.forecast"],
-    endpoint: "http://weather-agent:3001/facts",
+    endpoint: "http://localhost:3002/invoke",
     publicKey: "pub-key-placeholder",
     issuedAt: "2026-05-28T00:00:00.000Z"
   };
@@ -48,7 +48,7 @@ test("verifyPayload fails when payload is modified", () => {
     agentId: "finance.agent",
     version: "1.0.0",
     capabilities: ["finance.prices"],
-    endpoint: "http://finance-agent:3003/facts",
+    endpoint: "http://localhost:3003/invoke",
     publicKey: "pub-key-placeholder",
     issuedAt: "2026-05-28T00:00:00.000Z"
   };

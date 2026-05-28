@@ -2,18 +2,19 @@
   "name": "@nanda/resolver-client",
   "version": "0.1.0",
   "private": true,
-  "main": "dist/server.js",
-  "types": "dist/server.d.ts",
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "node -e \"console.log('resolver-client is CLI-only. From repo root run: pnpm resolve <agent-name>')\"",
+    "resolve": "tsx src/cli.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node -e \"console.error('Usage: pnpm resolve <agent-name>'); process.exit(1)\"",
     "lint": "eslint \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
+    "@nanda/crypto-utils": "workspace:*",
     "@nanda/shared-types": "workspace:*",
-    "dotenv": "^16.4.7",
-    "fastify": "^5.1.0"
+    "dotenv": "^16.4.7"
   }
 }

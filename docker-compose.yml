@@ -17,30 +17,44 @@ services:
       context: .
       dockerfile: services/weather-agent/Dockerfile
     container_name: nanda-weather-agent
+    depends_on:
+      - index-service
     ports:
       - "3002:3002"
     environment:
       - PORT=3002
       - HOST=0.0.0.0
+      - INDEX_SERVICE_REGISTER_URL=http://index-service:3000/register
+      - AGENT_PUBLIC_ADDR=http://weather-agent:3002/facts
+      - AGENT_ENDPOINT=http://weather-agent:3002/invoke
 
   finance-agent:
     build:
       context: .
       dockerfile: services/finance-agent/Dockerfile
     container_name: nanda-finance-agent
+    depends_on:
+      - index-service
     ports:
       - "3003:3003"
     environment:
       - PORT=3003
       - HOST=0.0.0.0
+      - INDEX_SERVICE_REGISTER_URL=http://index-service:3000/register
+      - AGENT_PUBLIC_ADDR=http://finance-agent:3003/facts
+      - AGENT_ENDPOINT=http://finance-agent:3003/invoke
 
   resolver-client:
+    profiles:
+      - tools
     build:
       context: .
       dockerfile: services/resolver-client/Dockerfile
-    container_name: nanda-resolver-client
-    ports:
-      - "3004:3004"
+    depends_on:
+      - index-service
+      - weather-agent
+      - finance-agent
     environment:
-      - PORT=3004
-      - HOST=0.0.0.0
+      - INDEX_SERVICE_URL=http://index-service:3000
+      - RESOLVER_USE_LOCALHOST=false
+    entrypoint: ["node", "services/resolver-client/dist/cli.js"]

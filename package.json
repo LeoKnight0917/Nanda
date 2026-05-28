@@ -4,9 +4,12 @@
   "private": true,
   "packageManager": "pnpm@9.12.3",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
+    "stop": "node scripts/free-dev-ports.cjs",
+    "dev": "pnpm -r --parallel --filter @nanda/index-service --filter @nanda/weather-agent --filter @nanda/finance-agent dev",
+    "dev:clean": "pnpm stop && pnpm dev",
     "build": "pnpm -r build",
-    "start": "pnpm -r --parallel start",
+    "start": "pnpm -r --parallel --filter @nanda/index-service --filter @nanda/weather-agent --filter @nanda/finance-agent start",
+    "resolve": "pnpm --filter @nanda/resolver-client resolve",
     "lint": "pnpm -r lint",
     "format": "pnpm -r format"
   },

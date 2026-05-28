@@ -5,7 +5,7 @@ import { WeatherResponseService } from "../services/weather-response.service";
 
 const servicePort = process.env.PORT ?? "3002";
 const factsEndpoint =
-  process.env.AGENT_ENDPOINT ?? `http://weather-agent:${servicePort}/invoke`;
+  process.env.AGENT_ENDPOINT ?? `http://localhost:${servicePort}/invoke`;
 
 const agentFactsService = new AgentFactsService(factsEndpoint);
 const weatherResponseService = new WeatherResponseService();

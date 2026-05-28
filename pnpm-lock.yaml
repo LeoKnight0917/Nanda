@@ -76,15 +76,15 @@ importers:
 
   services/resolver-client:
     dependencies:
+      '@nanda/crypto-utils':
+        specifier: workspace:*
+        version: link:../../packages/crypto-utils
       '@nanda/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
-      fastify:
-        specifier: ^5.1.0
-        version: 5.8.5
 
   services/weather-agent:
     dependencies:
