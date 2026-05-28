@@ -7,9 +7,9 @@ services:
       dockerfile: services/index-service/Dockerfile
     container_name: nanda-index-service
     ports:
-      - "3001:3001"
+      - "3000:3000"
     environment:
-      - PORT=3001
+      - PORT=3000
       - HOST=0.0.0.0
 
   weather-agent:

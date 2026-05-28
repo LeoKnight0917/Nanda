@@ -27,5 +27,5 @@ RUN pnpm install --prod --frozen-lockfile=false
 COPY --from=builder /app/services/index-service/dist services/index-service/dist
 COPY --from=builder /app/packages/shared-types/dist packages/shared-types/dist
 
-EXPOSE 3001
+EXPOSE 3000
 CMD ["node", "services/index-service/dist/server.js"]

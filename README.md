@@ -43,7 +43,7 @@ Each service is an independent Fastify TypeScript app with:
 
 Default ports:
 
-- `index-service`: `3001`
+- `index-service`: `3000`
 - `weather-agent`: `3002`
 - `finance-agent`: `3003`
 - `resolver-client`: `3004`
