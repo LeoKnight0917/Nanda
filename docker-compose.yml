@@ -1,0 +1,46 @@
+# version: "3.9"
+
+services:
+  index-service:
+    build:
+      context: .
+      dockerfile: services/index-service/Dockerfile
+    container_name: nanda-index-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+
+  weather-agent:
+    build:
+      context: .
+      dockerfile: services/weather-agent/Dockerfile
+    container_name: nanda-weather-agent
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - HOST=0.0.0.0
+
+  finance-agent:
+    build:
+      context: .
+      dockerfile: services/finance-agent/Dockerfile
+    container_name: nanda-finance-agent
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - HOST=0.0.0.0
+
+  resolver-client:
+    build:
+      context: .
+      dockerfile: services/resolver-client/Dockerfile
+    container_name: nanda-resolver-client
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - HOST=0.0.0.0
