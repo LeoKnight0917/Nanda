@@ -71,8 +71,31 @@ function tamperPayload(payload: AgentFacts): { tampered: AgentFacts; field: stri
   return { tampered, field, original, modified };
 }
 
+function formatConnectionError(error: unknown, target: string): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  const isConnectionFailure =
+    message.includes("fetch failed") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ENOTFOUND") ||
+    message.includes("ECONNRESET");
+
+  if (isConnectionFailure) {
+    return new Error(
+      `Cannot connect to ${target}. Start services first with "pnpm dev:clean", wait a few seconds, then run resolve again.`
+    );
+  }
+
+  return error instanceof Error ? error : new Error(message);
+}
+
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, init);
+  let response: Response;
+  try {
+    response = await fetch(url, init);
+  } catch (error) {
+    throw formatConnectionError(error, url);
+  }
+
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText} (${url})`);
   }
@@ -92,7 +115,12 @@ async function listRegisteredAgents(): Promise<string[]> {
 
 async function resolveAgent(agentName: string): Promise<ResolvedAgent> {
   const resolveUrl = `${indexServiceUrl}/resolve/${encodeURIComponent(agentName)}`;
-  const response = await fetch(resolveUrl);
+  let response: Response;
+  try {
+    response = await fetch(resolveUrl);
+  } catch (error) {
+    throw formatConnectionError(error, indexServiceUrl);
+  }
 
   if (response.status === 404) {
     const registered = await listRegisteredAgents();
@@ -156,7 +184,8 @@ async function run(): Promise<void> {
     if (tamper) {
       if (!signatureValid) {
         console.log("Tampering detected: signature does not match modified payload.");
-        process.exit(1);
+        console.log("\nTamper demonstration completed successfully (invalid signature rejected).");
+        return;
       }
 
       console.error("Unexpected: tampered payload verified successfully.");

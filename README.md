@@ -90,7 +90,7 @@ pnpm resolve weather.agent
 pnpm resolve finance.agent
 ```
 
-Tampering demonstration (signature verification must fail):
+Tampering demonstration (signature verification must fail; exits 0 when tampering is detected):
 
 ```bash
 pnpm resolve weather.agent --tamper
