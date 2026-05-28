@@ -82,6 +82,9 @@ importers:
 
   services/weather-agent:
     dependencies:
+      '@nanda/crypto-utils':
+        specifier: workspace:*
+        version: link:../../packages/crypto-utils
       '@nanda/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
@@ -91,6 +94,9 @@ importers:
       fastify:
         specifier: ^5.1.0
         version: 5.8.5
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
 
 packages:
 
