@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+
+ARG SERVICE_DIR=services/index-service
+ARG PNPM_FILTER=@nanda/index-service
+ARG NEEDS_CRYPTO_UTILS=false
+ARG PORT=3000
+ARG START_COMMAND=services/index-service/dist/server.js
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+ARG SERVICE_DIR
+ARG PNPM_FILTER
+ARG NEEDS_CRYPTO_UTILS
+
+RUN corepack enable
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY packages/shared-types/package.json packages/shared-types/package.json
+COPY packages/crypto-utils/package.json packages/crypto-utils/package.json
+COPY ${SERVICE_DIR}/package.json ${SERVICE_DIR}/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY packages/shared-types packages/shared-types
+COPY packages/crypto-utils packages/crypto-utils
+COPY ${SERVICE_DIR} ${SERVICE_DIR}
+
+RUN pnpm --filter @nanda/shared-types build && \
+    if [ "${NEEDS_CRYPTO_UTILS}" = "true" ]; then pnpm --filter @nanda/crypto-utils build; fi && \
+    pnpm --filter ${PNPM_FILTER} build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+ARG SERVICE_DIR
+ARG PNPM_FILTER
+ARG PORT
+ARG START_COMMAND
+
+ENV NODE_ENV=production
+ENV PORT=${PORT}
+ENV HOST=0.0.0.0
+ENV START_COMMAND=${START_COMMAND}
+
+RUN corepack enable
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
+COPY packages/shared-types/package.json packages/shared-types/package.json
+COPY packages/crypto-utils/package.json packages/crypto-utils/package.json
+COPY ${SERVICE_DIR}/package.json ${SERVICE_DIR}/package.json
+
+RUN pnpm install --prod --frozen-lockfile
+
+COPY --from=builder /app/packages/shared-types/dist packages/shared-types/dist
+COPY --from=builder /app/packages/crypto-utils/dist packages/crypto-utils/dist
+COPY --from=builder /app/${SERVICE_DIR}/dist ${SERVICE_DIR}/dist
+COPY docker/healthcheck.mjs docker/healthcheck.mjs
+
+EXPOSE ${PORT}
+
+CMD ["sh", "-c", "node \"$START_COMMAND\""]

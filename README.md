@@ -77,10 +77,26 @@ Build all workspaces:
 pnpm build
 ```
 
-Run with Docker Compose:
+Run the full stack with one command (build, start, healthchecks, auto-registration, E2E smoke test):
 
 ```bash
+make up
+# or
 docker compose up --build
+```
+
+Other Docker commands:
+
+```bash
+make logs
+make down
+```
+
+Manual resolver CLI inside Docker network:
+
+```bash
+make resolve-weather
+make resolve-finance
 ```
 
 Resolve and invoke an agent via CLI (with services running):

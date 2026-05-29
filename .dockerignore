@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+.git
+.gitignore
+**/.env
+!**/.env.example
+terminals
+assets
+*.md
+!README.md
+.pnpm-store

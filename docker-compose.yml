@@ -1,60 +1,137 @@
-# version: "3.9"
+name: project-nanda
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 6
+  start_period: 25s
 
 services:
   index-service:
     build:
       context: .
-      dockerfile: services/index-service/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: services/index-service
+        PNPM_FILTER: "@nanda/index-service"
+        NEEDS_CRYPTO_UTILS: "false"
+        PORT: "3000"
+        START_COMMAND: services/index-service/dist/server.js
     container_name: nanda-index-service
+    restart: unless-stopped
+    logging: *default-logging
     ports:
       - "3000:3000"
     environment:
-      - PORT=3000
-      - HOST=0.0.0.0
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      NODE_ENV: production
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "node", "docker/healthcheck.mjs"]
 
   weather-agent:
     build:
       context: .
-      dockerfile: services/weather-agent/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: services/weather-agent
+        PNPM_FILTER: "@nanda/weather-agent"
+        NEEDS_CRYPTO_UTILS: "true"
+        PORT: "3002"
+        START_COMMAND: services/weather-agent/dist/server.js
     container_name: nanda-weather-agent
+    restart: unless-stopped
+    logging: *default-logging
     depends_on:
-      - index-service
+      index-service:
+        condition: service_healthy
     ports:
       - "3002:3002"
     environment:
-      - PORT=3002
-      - HOST=0.0.0.0
-      - INDEX_SERVICE_REGISTER_URL=http://index-service:3000/register
-      - AGENT_PUBLIC_ADDR=http://weather-agent:3002/facts
-      - AGENT_ENDPOINT=http://weather-agent:3002/invoke
+      PORT: "3002"
+      HOST: "0.0.0.0"
+      NODE_ENV: production
+      INDEX_SERVICE_REGISTER_URL: http://index-service:3000/register
+      AGENT_PUBLIC_ADDR: http://weather-agent:3002/facts
+      AGENT_ENDPOINT: http://weather-agent:3002/invoke
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "node", "docker/healthcheck.mjs"]
 
   finance-agent:
     build:
       context: .
-      dockerfile: services/finance-agent/Dockerfile
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE_DIR: services/finance-agent
+        PNPM_FILTER: "@nanda/finance-agent"
+        NEEDS_CRYPTO_UTILS: "true"
+        PORT: "3003"
+        START_COMMAND: services/finance-agent/dist/server.js
     container_name: nanda-finance-agent
+    restart: unless-stopped
+    logging: *default-logging
     depends_on:
-      - index-service
+      index-service:
+        condition: service_healthy
     ports:
       - "3003:3003"
     environment:
-      - PORT=3003
-      - HOST=0.0.0.0
-      - INDEX_SERVICE_REGISTER_URL=http://index-service:3000/register
-      - AGENT_PUBLIC_ADDR=http://finance-agent:3003/facts
-      - AGENT_ENDPOINT=http://finance-agent:3003/invoke
+      PORT: "3003"
+      HOST: "0.0.0.0"
+      NODE_ENV: production
+      INDEX_SERVICE_REGISTER_URL: http://index-service:3000/register
+      AGENT_PUBLIC_ADDR: http://finance-agent:3003/facts
+      AGENT_ENDPOINT: http://finance-agent:3003/invoke
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "node", "docker/healthcheck.mjs"]
+
+  e2e-smoke:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.e2e
+    container_name: nanda-e2e-smoke
+    restart: "no"
+    logging: *default-logging
+    depends_on:
+      index-service:
+        condition: service_healthy
+      weather-agent:
+        condition: service_healthy
+      finance-agent:
+        condition: service_healthy
+    environment:
+      INDEX_SERVICE_URL: http://index-service:3000
+      RESOLVER_USE_LOCALHOST: "false"
+      NODE_ENV: production
+    command: ["node", "scripts/docker-e2e.mjs"]
 
   resolver-client:
     profiles:
       - tools
     build:
       context: .
-      dockerfile: services/resolver-client/Dockerfile
+      dockerfile: docker/Dockerfile.e2e
+    container_name: nanda-resolver-client
+    restart: "no"
+    logging: *default-logging
     depends_on:
-      - index-service
-      - weather-agent
-      - finance-agent
+      index-service:
+        condition: service_healthy
+      weather-agent:
+        condition: service_healthy
+      finance-agent:
+        condition: service_healthy
     environment:
-      - INDEX_SERVICE_URL=http://index-service:3000
-      - RESOLVER_USE_LOCALHOST=false
+      INDEX_SERVICE_URL: http://index-service:3000
+      RESOLVER_USE_LOCALHOST: "false"
+      NODE_ENV: production
     entrypoint: ["node", "services/resolver-client/dist/cli.js"]
