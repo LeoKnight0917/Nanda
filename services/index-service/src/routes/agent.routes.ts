@@ -4,6 +4,7 @@ import {
   resolveAgentParamsSchema
 } from "../schemas/agent.schema";
 import { AgentRegistryService } from "../services/agent-registry.service";
+import { verifyPayload } from "@nanda/crypto-utils";
 
 const agentRegistryService = new AgentRegistryService();
 
@@ -70,5 +71,21 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
     const agents = agentRegistryService.getAllAgents();
     request.log.info({ count: agents.length }, "Listing agents");
     return reply.code(200).send(agents);
+  });
+
+  app.post("/verify-facts", async (request, reply) => {
+    const body = request.body as any;
+    if (!body || !body.payload || !body.signature) {
+      return reply.code(400).send({ success: false, error: "Missing payload or signature" });
+    }
+
+    try {
+      const publicKey = body.payload.publicKey;
+      const valid = verifyPayload(body.payload, body.signature, publicKey);
+      return reply.code(200).send({ success: true, valid });
+    } catch (err) {
+      request.log.warn({ err }, "Failed to verify signature");
+      return reply.code(500).send({ success: false, error: "Verification failure" });
+    }
   });
 };
