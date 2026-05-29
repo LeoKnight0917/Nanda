@@ -23,7 +23,9 @@ export default function AgentDetails({ apiBase, agentName }: { apiBase: string; 
         setResolve(r.data);
 
         // fetch facts from agent
-        const factsUrl = `${r.data.agentAddr.replace(/\/$/,"")}/facts`;
+        // agentAddr may already point to /facts; use it directly if so, otherwise append /facts
+        const maybeFactsUrl = r.data.agentAddr.replace(/\/$/, "");
+        const factsUrl = maybeFactsUrl.endsWith("/facts") ? maybeFactsUrl : `${maybeFactsUrl}/facts`;
         const f = await axios.get(factsUrl);
         setFacts(f.data);
 
@@ -39,7 +41,9 @@ export default function AgentDetails({ apiBase, agentName }: { apiBase: string; 
   const handleInvoke = async () => {
     if (!resolve) return;
     try {
-      const url = `${resolve.agentAddr.replace(/\/$/,"")}/invoke`;
+      // Use the endpoint declared in AgentFacts payload (more reliable)
+      const endpoint = facts?.payload?.endpoint ?? resolve.agentAddr.replace(/\/$/, "") + "/invoke";
+      const url = endpoint.replace(/\/$/, "") ;
       const body = { query };
       const r = await axios.post(url, body);
       setInvokeResp(r.data);
