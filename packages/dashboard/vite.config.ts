@@ -4,6 +4,9 @@ export default defineConfig(async () => {
   const reactPlugin = (await import("@vitejs/plugin-react")).default;
   return {
     plugins: [reactPlugin()],
-    server: { port: 5173 }
+    server: {
+      host: "0.0.0.0",
+      port: 5173
+    }
   };
 });

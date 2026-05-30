@@ -5,6 +5,7 @@ import {
 } from "../schemas/agent.schema";
 import { AgentRegistryService } from "../services/agent-registry.service";
 import { verifyPayload } from "@nanda/crypto-utils";
+import type { SignedAgentFacts } from "@nanda/shared-types";
 
 const agentRegistryService = new AgentRegistryService();
 
@@ -63,7 +64,7 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
       });
     }
 
-    request.log.info({ agentName: agent.agentName }, "Agent resolved");
+    request.log.info({ agentName: parsedParams.data.agentName }, "Agent resolved");
     return reply.code(200).send(agent);
   });
 
@@ -73,8 +74,35 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
     return reply.code(200).send(agents);
   });
 
-  app.post("/verify-facts", async (request, reply) => {
+  // Verify AgentAddr signature (signed by index)
+  app.post("/verify-agent-addr", async (request, reply) => {
     const body = request.body as any;
+    if (!body || !body.agent_id || !body.signature) {
+      return reply.code(400).send({ success: false, error: "Missing agent_id or signature" });
+    }
+
+    try {
+      const publicKey = agentRegistryService.getIndexPublicKey();
+      const payloadToVerify = {
+        agent_id: body.agent_id,
+        agent_name: body.agent_name,
+        primary_facts_url: body.primary_facts_url,
+        private_facts_url: body.private_facts_url,
+        adaptive_resolver_url: body.adaptive_resolver_url,
+        ttl: body.ttl,
+        signed_at: body.signed_at
+      };
+      
+      const valid = verifyPayload(payloadToVerify, body.signature, publicKey);
+      return reply.code(200).send({ success: true, valid });
+    } catch (err) {
+      request.log.warn({ err }, "Failed to verify AgentAddr signature");
+      return reply.code(500).send({ success: false, error: "Verification failure" });
+    }
+  });
+
+  app.post("/verify-facts", async (request, reply) => {
+    const body = request.body as SignedAgentFacts;
     if (!body || !body.payload || !body.signature) {
       return reply.code(400).send({ success: false, error: "Missing payload or signature" });
     }
@@ -87,5 +115,11 @@ export const agentRoutes: FastifyPluginAsync = async (app) => {
       request.log.warn({ err }, "Failed to verify signature");
       return reply.code(500).send({ success: false, error: "Verification failure" });
     }
+  });
+
+  // Endpoint for getting index public key (for verification)
+  app.get("/public-key", async (request, reply) => {
+    const publicKey = agentRegistryService.getIndexPublicKey();
+    return reply.code(200).send({ publicKey });
   });
 };

@@ -73,30 +73,117 @@ Note: The repository provides server-side verification in the Index to keep the 
 ## Setup
 Prerequisites: Node.js 18+, pnpm, Docker (if using compose).
 
-From repo root:
+From the repo root:
 
 ```bash
 pnpm install
 ```
 
-Start development services (index + agents):
+### Run the project
+Start the backend services only (index, weather, finance):
 
 ```bash
 pnpm dev
 ```
 
-Start the dashboard (separate terminal):
+Start the dashboard together with backend services:
+
+```bash
+pnpm run dev:all
+```
+
+Stop the running services:
+
+```bash
+pnpm stop
+```
+
+Build all packages:
+
+```bash
+pnpm -r build
+```
+
+Run the resolver client from the repo root:
+
+```bash
+pnpm resolve weather.agent
+pnpm resolve finance.agent
+```
+
+### View the project visually
+The dashboard is the main visual surface for this project. It shows registered agents, facts validation, and lets you invoke agents directly from the browser.
+
+1. Start the dashboard with the backend services:
+
+```bash
+pnpm run dev:all
+```
+
+2. Open your browser to:
+
+```text
+http://localhost:5173
+```
+
+3. In the dashboard:
+- the agent list should appear with each registered agent
+- clicking an agent shows its facts and endpoint details
+- the dashboard verifies the agent signature and shows success/failure
+- you can invoke the agent and see the response in the UI
+
+If you want to start only the dashboard after the backend is already running:
 
 ```bash
 cd packages/dashboard
 pnpm install
 pnpm dev
-# open http://localhost:5173
 ```
+
+Then open:
+
+```text
+http://localhost:5173
+```
+
+### How to test the agents manually
+Weather agent:
+
+```bash
+curl -X POST http://localhost:3002/invoke -H "Content-Type: application/json" -d '{"query":"London"}'
+```
+
+Finance agent:
+
+```bash
+curl -X POST http://localhost:3003/invoke -H "Content-Type: application/json" -d '{"ticker":"AAPL"}'
+```
+
+### Verify the index
+
+```bash
+curl http://localhost:3000/agents
+curl http://localhost:3000/resolve/weather.agent
+```
+
+### Run everything in one command
+
+```bash
+pnpm run dev:all
+```
+
+Then visit the dashboard at `http://localhost:5173`.
 
 Environment variables (examples inside each service `.env`/`.env.example`):
 - `INDEX_SERVICE_REGISTER_URL` — where agents POST to register (default `http://localhost:3000/register`)
 - `AGENT_PUBLIC_ADDR` — override the public facts URL agents register with
+- `HOST` — host binding for all services, use `0.0.0.0` for VPN / network access
+- `VITE_API_BASE` — dashboard API base when not using a same-host default
+
+Astrill / VPN usage:
+- run services with `HOST=0.0.0.0` so they bind to all interfaces
+- if your browser loads the dashboard from a remote-accessible address, set `VITE_API_BASE=http://<your-host>:3000`
+- if your agents are reachable on a different host/IP, set `AGENT_PUBLIC_ADDR` to the announced facts URL and `INDEX_SERVICE_REGISTER_URL` to the index host
 
 ---
 

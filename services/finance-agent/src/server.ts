@@ -1,10 +1,13 @@
 import "dotenv/config";
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { financeRoutes } from "./routes/finance.routes";
 import { healthRoutes } from "./routes/health.routes";
 import { registerWithIndexService } from "./services/index-registration.service";
 
 const app = Fastify({ logger: true });
+
+void app.register(cors, { origin: true });
 const port = Number(process.env.PORT ?? 3003);
 const host = process.env.HOST ?? "0.0.0.0";
 const registerUrl =

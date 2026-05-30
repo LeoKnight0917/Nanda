@@ -6,6 +6,7 @@
   "scripts": {
     "stop": "node scripts/free-dev-ports.cjs",
     "dev": "pnpm -r --parallel --filter @nanda/index-service --filter @nanda/weather-agent --filter @nanda/finance-agent dev",
+    "dev:all": "pnpm -r --parallel --filter @nanda/index-service --filter @nanda/weather-agent --filter @nanda/finance-agent --filter nanda-dashboard dev",
     "dev:clean": "pnpm stop && pnpm dev",
     "build": "pnpm -r build",
     "start": "pnpm -r --parallel --filter @nanda/index-service --filter @nanda/weather-agent --filter @nanda/finance-agent start",

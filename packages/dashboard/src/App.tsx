@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import AgentList from "./components/AgentList";
-import AgentDetails from "./components/AgentDetails";
+import AgentList from "./components/AgentList.js";
+import AgentDetails from "./components/AgentDetails.js";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
+const API_BASE =
+  import.meta.env.VITE_API_BASE ??
+  (typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : "http://localhost:3000");
 
 export default function App() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -14,12 +18,12 @@ export default function App() {
         <p className="text-sm text-gray-500">Protocol visualization & agent actions</p>
       </header>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-1 bg-white rounded shadow p-4">
-          <AgentList apiBase={API_BASE} onSelect={(name) => setSelected(name)} selected={selected} />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="bg-white rounded shadow p-4 md:col-span-1">
+          <AgentList apiBase={API_BASE} onSelect={(name: string) => setSelected(name)} selected={selected} />
         </div>
 
-        <div className="col-span-2 bg-white rounded shadow p-4">
+        <div className="bg-white rounded shadow p-4 md:col-span-2">
           <AgentDetails apiBase={API_BASE} agentName={selected} />
         </div>
       </div>

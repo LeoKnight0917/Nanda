@@ -1,9 +1,12 @@
 import "dotenv/config";
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { agentRoutes } from "./routes/agent.routes";
 import { healthRoutes } from "./routes/health.routes";
 
 const app = Fastify({ logger: true });
+
+void app.register(cors, { origin: true });
 const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? "0.0.0.0";
 

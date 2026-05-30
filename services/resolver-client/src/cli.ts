@@ -3,13 +3,14 @@ import { verifyPayload } from "@nanda/crypto-utils";
 import {
   validateAgentFacts,
   validateSignedAgentFacts,
-  type AgentFacts
+  type AgentFacts,
+  type AgentAddr
 } from "@nanda/shared-types";
 
-interface ResolvedAgent {
-  agentName: string;
-  agentAddr: string;
-  registeredAt: string;
+interface ResolvedAgent extends AgentAddr {
+  agentName?: string;
+  agentAddr?: string;
+  registeredAt?: string;
 }
 
 interface CliOptions {
@@ -104,10 +105,12 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 async function listRegisteredAgents(): Promise<string[]> {
   try {
-    const agents = await fetchJson<Array<{ agentName: string }>>(
+    const agents = await fetchJson<Array<{ agent_name?: string; agentName?: string }>>(
       `${indexServiceUrl}/agents`
     );
-    return agents.map((agent) => agent.agentName);
+    return agents
+      .map((agent) => agent.agent_name ?? agent.agentName ?? "")
+      .filter((name) => name.length > 0);
   } catch {
     return [];
   }
@@ -148,13 +151,19 @@ async function run(): Promise<void> {
     }
 
     const resolved = await resolveAgent(agentName);
-    const factsUrl = toLocalDevUrl(resolved.agentAddr);
+    // Use new AgentAddr format: primary_facts_url instead of agentAddr
+    const factEndpoint = resolved.primary_facts_url || resolved.agentAddr;
+    if (!factEndpoint) {
+      throw new Error("No facts URL found in agent resolution");
+    }
+    const factsUrl = toLocalDevUrl(factEndpoint);
 
-    console.log(`Resolved address: ${resolved.agentAddr}`);
-    if (factsUrl !== resolved.agentAddr) {
+    console.log(`Resolved address: ${factEndpoint}`);
+    console.log(`TTL: ${resolved.ttl}s`);
+    if (factsUrl !== factEndpoint) {
       console.log(`Fetching facts via: ${factsUrl}`);
     }
-    console.log(`Registered at: ${resolved.registeredAt}`);
+    console.log(`Registered at: ${resolved.signed_at || resolved.registeredAt}`);
 
     const signedFactsRaw = await fetchJson<unknown>(factsUrl);
     const signedFacts = validateSignedAgentFacts(signedFactsRaw);
@@ -202,9 +211,16 @@ async function run(): Promise<void> {
       console.log(`- ${capability}`);
     }
 
-    const invokeUrl = toLocalDevUrl(facts.endpoint);
+    // Support both legacy endpoint field and new endpoints structure
+    const endpointUrl = facts.endpoint || facts.endpoints?.static?.[0];
+    if (!endpointUrl) {
+      console.error("No endpoint found in agent facts");
+      process.exit(1);
+    }
+
+    const invokeUrl = toLocalDevUrl(endpointUrl);
     const invokePayload = buildInvokePayload(facts);
-    if (invokeUrl !== facts.endpoint) {
+    if (invokeUrl !== endpointUrl) {
       console.log(`\nInvoking via: ${invokeUrl}`);
     }
 

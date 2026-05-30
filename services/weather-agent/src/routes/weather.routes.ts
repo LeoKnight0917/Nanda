@@ -23,6 +23,14 @@ export const weatherRoutes: FastifyPluginAsync = async (app) => {
     return reply.code(200).send(signedFacts);
   });
 
+  app.get("/invoke", async (request, reply) => {
+    reply.header("Allow", "POST");
+    return reply.code(405).send({
+      success: false,
+      error: "Use POST /invoke with JSON body { query: 'Your location' }"
+    });
+  });
+
   app.post("/invoke", async (request, reply) => {
     const parsed = invokeBodySchema.safeParse(request.body);
     if (!parsed.success) {
